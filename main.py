@@ -57,6 +57,7 @@ def run_local(cfg: DictConfig):
 
     # Set up the output directory.
     output_dir = Path(hydra_cfg.runtime.output_dir)
+    print("Outputs will be saved to:", output_dir)
     if is_rank_zero:
         print(cyan(f"Outputs will be saved to:"), output_dir)
         (output_dir.parents[1] / "latest-run").unlink(missing_ok=True)

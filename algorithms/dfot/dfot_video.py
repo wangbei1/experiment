@@ -1,3 +1,4 @@
+from datetime import datetime  # 正确的导入方式
 from typing import Optional, Any, Dict, Literal, Callable, Tuple
 from functools import partial
 from omegaconf import DictConfig
@@ -26,6 +27,7 @@ from .diffusion import (
 )
 from .history_guidance import HistoryGuidance
 
+from colorama import Fore, Style, init
 
 class DFoTVideo(BasePytorchAlgo):
     """
@@ -76,11 +78,10 @@ class DFoTVideo(BasePytorchAlgo):
             for task in ["prediction", "interpolation"]
             if getattr(cfg.tasks, task).enabled
         ]
+        self.loss_log_path = None
         self.num_logged_videos = 0
         self.generator = None
-
         super().__init__(cfg)
-
     # ---------------------------------------------------------------------
     # Prepare Model, Optimizer, and Metrics
     # ---------------------------------------------------------------------
@@ -314,6 +315,7 @@ class DFoTVideo(BasePytorchAlgo):
         loss = self._reweight_loss(loss, masks)
 
         if batch_idx % self.cfg.logging.loss_freq == 0:
+
             self.log(
                 f"{namespace}/loss",
                 loss,
@@ -321,6 +323,8 @@ class DFoTVideo(BasePytorchAlgo):
                 on_epoch=namespace != "training",
                 sync_dist=True,
             )
+            if self.trainer.is_global_zero:  # 确保只在主进程记录，避免重复
+                self._log_loss_to_file(loss, self.global_step)
 
         xs, xs_pred = map(self._unnormalize_x, (xs, xs_pred))
 
@@ -331,7 +335,19 @@ class DFoTVideo(BasePytorchAlgo):
         }
 
         return output_dict
+    
 
+    def _log_loss_to_file(self, loss, global_step):
+        timestamp = datetime.now().strftime("%m/%d %H:%M:%S")
+        loss_value = loss.item() if hasattr(loss, 'item') else loss
+        log_entry = f"[{timestamp}]: Step: {global_step} Total Loss: {loss_value:.4f}\n"
+
+        try:
+            with open(self.loss_log_path, 'a') as f:
+                f.write(log_entry)
+        except Exception as e:
+            print(f"写入loss日志失败: {e}")
+            
     def on_before_optimizer_step(self, optimizer: Optimizer) -> None:
         if (
             self.cfg.logging.grad_norm_freq

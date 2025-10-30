@@ -18,7 +18,7 @@ dataset:
 algorithm:
   lr_scheduler:
     name: constant_with_warmup
-    num_warmup_steps: 10000
+    num_warmup_steps: 1000
     num_training_steps: 550000
   weight_decay: 0.01
   compile: true_without_ddp_optimizer
@@ -36,6 +36,7 @@ algorithm:
   logging:
     max_num_videos: 256
     metrics: [fvd, is, fid, lpips, mse, ssim, psnr]
+    loss_freq: 25
   backbone:
     channels: [128, 256, 576, 1152]
     num_updown_blocks: [3, 3, 6]
@@ -48,7 +49,7 @@ algorithm:
 experiment:
   training:
     lr: 5e-5
-    batch_size: 8
+    batch_size: 16
     max_epochs: 22
   validation:
     batch_size: 8

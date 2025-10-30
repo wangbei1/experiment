@@ -22,7 +22,7 @@ training:
     shuffle: False
   checkpointing:
     every_n_train_steps: null
-    every_n_epochs: 2
+    every_n_epochs: 1
   optim:
     gradient_clip_val: 1.0
 
@@ -30,7 +30,7 @@ validation:
   batch_size: 128
   val_every_n_step: 1.0
   val_every_n_epoch: 1
-  limit_batch: 1.0
+  limit_batch: 5
   data:
     num_workers: 1
 

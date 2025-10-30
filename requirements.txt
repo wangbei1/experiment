@@ -1,5 +1,5 @@
 numpy~=1.0
-torch
+torch==2.4.0
 torchvision
 wandb
 hydra-core

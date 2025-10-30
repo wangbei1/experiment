@@ -34,7 +34,7 @@ class ResumableDataModule(BaseDataModule):
 
     def _build_dataset(self, split: str) -> torch.utils.data.Dataset:
         if split in ["training", "test", "validation"]:
-            is_resumable = self.is_resumable and split == "training"
+            is_resumable = (split == "training") and self.is_resumable
             dataset = self.compatible_datasets[self.root_cfg.dataset._name](
                 self.root_cfg.dataset,
                 split=split,
