@@ -3,31 +3,24 @@ import re
 from datetime import datetime
 from huggingface_hub import HfApi, create_repo
 
-# ==== 配置区 ====
-# 相对路径（相对你运行此脚本时的工作目录）
+# ===== 配置 =====
 CKPT_DIR = "outputs/latest-run/checkpoints"
+LOSS_PATH = "outputs/latest-run/loss.txt"
+REPO_ID = "wangbei1/qianyi"
+REPO_TYPE = "model"
 
-# 目标仓库
-REPO_ID = "wangbei1/qianyi"   # e.g. "username/repo_name"
-REPO_TYPE = "model"           # 通常模型仓库用 "model"
-
-# 读取 token（优先环境变量 HF_TOKEN，找不到再用变量 TOKEN_FALLBACK）
-TOKEN_FALLBACK = None  # 你也可以临时在这里放一个 token 字符串，但不推荐
+# 令牌：优先从环境变量取，避免硬编码
 token = "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"
-
 if not token:
-    raise RuntimeError(
-        "没有找到 Hugging Face 访问令牌。请先设置环境变量 HF_TOKEN='your_token_here'。"
-    )
+    raise RuntimeError("请先 export HF_TOKEN=你的token 再运行。")
 
-# ==== 1) 找出最大 step 的 ckpt ====
+# ===== 1) 选出 step 最大的 ckpt =====
 pattern = re.compile(r"^dfot-step[=-](\d+)\.ckpt$")
-max_step = -1
-best_file = None
-
 if not os.path.isdir(CKPT_DIR):
     raise FileNotFoundError(f"找不到目录：{CKPT_DIR}")
 
+max_step = -1
+best_file = None
 for fname in os.listdir(CKPT_DIR):
     m = pattern.match(fname)
     if m:
@@ -37,37 +30,46 @@ for fname in os.listdir(CKPT_DIR):
             best_file = fname
 
 if best_file is None:
-    raise FileNotFoundError(
-        f"在 {CKPT_DIR} 下没有找到形如 dfot-step=*.ckpt 或 dfot-step-*.ckpt 的文件。"
-    )
+    raise FileNotFoundError(f"在 {CKPT_DIR} 下没有找到 dfot-step=*.ckpt / dfot-step-*.ckpt")
 
-local_path = os.path.join(CKPT_DIR, best_file)
-print(f"将要上传的本地文件：{local_path}（step={max_step}）")
+ckpt_local = os.path.join(CKPT_DIR, best_file)
+print(f"将要上传的 ckpt：{ckpt_local} (step={max_step})")
 
-# ==== 2) 生成上传文件名（把 = 改成 -，并追加时间戳）====
-# 原始名例如：dfot-step=50000.ckpt  -> dfot-step-50000_1023_2026.ckpt
-ts = datetime.now().strftime("%m%d_%H%M")  # 例如 "1023_2026"
-repo_basename = best_file.replace("=", "-")
-repo_name_with_time = repo_basename.replace(".ckpt", f"_{ts}.ckpt")
+# ===== 2) 生成统一时间戳，并构造上传名 =====
+ts = datetime.now().strftime("%m%d_%H%M")  # 例如 1023_2026
 
-# 如果你想把 ckpt 放到子目录，比如 "checkpoints/" 下：
-# repo_path = f"checkpoints/{repo_name_with_time}"
-# 否则直接放根目录：
-repo_path = repo_name_with_time
+# ckpt：把 '=' 改成 '-'，并追加时间戳
+ckpt_repo_name = best_file.replace("=", "-").replace(".ckpt", f"_{ts}.ckpt")
+ckpt_repo_path = ckpt_repo_name                     # 放根目录；如需子目录：f"checkpoints/{ckpt_repo_name}"
 
-print(f"上传到仓库的路径：{REPO_ID}/{repo_path}")
+# loss.txt：也带时间戳
+if not os.path.isfile(LOSS_PATH):
+    raise FileNotFoundError(f"找不到 loss 日志文件：{LOSS_PATH}")
+loss_repo_name = f"loss_{ts}.txt"
+loss_local = LOSS_PATH
+loss_repo_path = loss_repo_name                     # 放根目录；如需子目录：f"logs/{loss_repo_name}"
 
-# ==== 3) 创建（或复用）仓库并上传 ====
+print(f"上传到仓库的 ckpt 路径：{REPO_ID}/{ckpt_repo_path}")
+print(f"上传到仓库的 loss 路径：{REPO_ID}/{loss_repo_path}")
+
+# ===== 3) 创建/复用仓库并上传 =====
 api = HfApi(token=token)
-
-# 如果仓库已存在会复用；不存在则创建
 create_repo(repo_id=REPO_ID, repo_type=REPO_TYPE, private=True, exist_ok=True, token=token)
 
+# # 上传 ckpt
+# api.upload_file(
+#     path_or_fileobj=ckpt_local,
+#     path_in_repo=ckpt_repo_path,
+#     repo_id=REPO_ID,
+#     repo_type=REPO_TYPE,
+# )
+# print("✅ ckpt 上传成功")
+
+# 上传 loss.txt
 api.upload_file(
-    path_or_fileobj=local_path,
-    path_in_repo=repo_path,
+    path_or_fileobj=loss_local,
+    path_in_repo=loss_repo_path,
     repo_id=REPO_ID,
     repo_type=REPO_TYPE,
 )
-
-print("✅ 文件上传成功！")
+print("✅ loss.txt 上传成功")
