@@ -1,0 +1,131 @@
+# Dataset settings
+dataset = dict(
+    type="VariableVideoTextWithDurationDataset",
+    transform_name="resize_crop",
+    data_path="/mnt/dufei.df/Data/vcg_with_image_test.parquet",
+    sample_fps=16,
+    add_one=False,
+)
+
+# dataset = dict(
+#     type="VariableVideoTextPerRankDataset",
+#     transform_name="resize_crop",
+#     data_path="/mnt/dufei.df/Data/video_data_500M_filtered_240p_24s_bs4_node960/split_data_{}.parquet",
+#     image_data_path="/mnt/dufei.df/Data/image_data_vcg_joy_filteredunsafe_17M7_240p_24s_bs4_node960/split_data_{}.parquet",
+#     image_percent=None,
+#     sample_fps=16,
+#     add_one=True,
+# )
+
+bucket_config = {
+    "480p": {5: (1.0, 1)},
+}
+
+grad_checkpoint = True
+
+# Acceleration settings
+num_workers = 8
+num_bucket_build_workers = 16
+dtype = "bf16"
+mode = "FSDP"
+sp_degree = 1
+monitor = False
+
+exp_flag = "hunyuan_test"
+maskdit = True
+unpatchify_loss = False
+fulltoken = False
+
+# Model settings
+model = dict(
+    type="Hunyuan",
+    from_pretrained="/mnt/dufei.df/HunyuanVideo/ckpts/hunyuan-video-t2v-720p/transformers/model.safetensors",
+    text_states_dim=4096,
+    text_states_dim_2=768,
+    patch_size=[1, 2, 2],
+    in_channels=16,  # Should be VAE.config.latent_channels.
+    out_channels=None,
+    hidden_size=3072,
+    heads_num=24,
+    mlp_width_ratio=4.0,
+    mlp_act_type="gelu_tanh",
+    mm_double_blocks_depth=20,
+    mm_single_blocks_depth=40,
+    rope_dim_list=[16, 56, 56],
+    qkv_bias=True,
+    qk_norm=True,
+    qk_norm_type="rms",
+    guidance_embed=False,  # For modulation.
+    text_projection="single_refiner",
+    use_attention_mask=True,
+    maskdit=maskdit,
+    decoder_depth=4,
+)
+
+text_encoder=dict(
+    text_encoder_path="/mnt/dufei.df/HunyuanVideo/ckpts/text_encoder/",
+    text_encoder_type="llm",
+    max_length=256,
+    tokenizer_type="llm",
+    hidden_state_skip_layer=2,
+)
+text_encoder_2=dict(
+    text_encoder_path="/mnt/dufei.df/HunyuanVideo/ckpts/text_encoder_2/",
+    text_encoder_type="clipL",
+    max_length=77,
+    tokenizer_type="clipL",
+)
+
+vae = dict(
+    type="JINGKAI_VAE",
+    pretrained_spatial_vae_path="/mnt/dufei.df/FLUX.1-dev-diffusers/",
+    from_pretrained="/mnt/dufei.df/video_vae/checkpoint-stage4-final.pth",
+    scaling_factor=0.9480883479118347,
+    shift_factor=0.04052285850048065,
+)
+
+scheduler = dict(
+    type="rflow-sd3",
+    use_timestep_transform=True,
+    use_fixed_timestep_transform=True,
+    sample_method="logit-normal",
+    transform_scale=9,
+)
+
+# Temporal mask settings
+# temporal_mask_ratios = {
+#     "random": 0.05,
+#     "intepolate": 0.005,
+#     "quarter_random": 0.005,
+#     "quarter_head": 0.005,
+#     "quarter_tail": 0.005,
+#     "quarter_head_tail": 0.005,
+#     "image_random": 0.025,
+#     "image_head": 0.05,
+#     "image_tail": 0.025,
+#     "image_head_tail": 0.025,
+# }
+# Spatial mask settings
+if maskdit and not fulltoken:
+    spatial_mask_ratio = 0.5
+    mae_loss_coef = 0.1
+
+prompt_uncond_prob=0.1 #for cfg
+mask_ratios=None
+# Log settings
+seed = 42
+outputs = "outputs/"
+wandb = False
+epochs = 1
+log_every = 1
+ckpt_every = 500
+# eval_every = 200
+
+# optimization settings
+load = None
+grad_clip = 1.0
+lr = 1e-5
+ema_decay = 0.99
+adam_eps = 1e-15
+weight_decay= 1e-4
+warmup_steps = 200

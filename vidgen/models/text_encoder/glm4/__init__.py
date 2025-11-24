@@ -1,0 +1,2 @@
+from .tokenization_chatglm import ChatGLM4Tokenizer
+from .modeling_chatglm import ChatGLMModel

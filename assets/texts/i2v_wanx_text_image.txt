@@ -1,0 +1,3 @@
+一个女子手拎皮箱，背着各种颜色的气球向前走.{"reference_path": "assets/images/wanx2.1_i2v_official.png","mask_strategy": "0"}
+一个女子手拎皮箱，背着各种颜色的气球，向前缓慢的行走，步伐非常优雅.{"reference_path": "assets/images/wanx2.1_i2v_official.png","mask_strategy": "0"}
+中式家居风格视频动效，镜头缓缓移动，展示一张深棕色木质沙发，沙发上铺着厚实的防滑坐垫。坐垫上有精美的花卉图案，色彩为暖棕色和米色相间，图案细节清晰。阳光透过窗帘洒在沙发上，营造出温馨的室内氛围。镜头从沙发的侧面缓慢拉近，突出坐垫的柔软质感和精致花纹.{"reference_path": "assets/images/yichen_case1.jpg","mask_strategy": "0"}
